@@ -1,2 +1,1 @@
-import { getBaseUrl } from "./env";
-export const API_URL = getBaseUrl();
+export const API_URL = "http://127.0.0.1:8000";

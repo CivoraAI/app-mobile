@@ -1,29 +1,30 @@
-import { Link } from 'expo-router';
-import { StyleSheet } from 'react-native';
-
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+// app/modal.tsx
+import { useRouter } from "expo-router";
+import { Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
 
 export default function ModalScreen() {
+  const router = useRouter();
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="title">This is a modal</ThemedText>
-      <Link href="/" dismissTo style={styles.link}>
-        <ThemedText type="link">Go to home screen</ThemedText>
-      </Link>
-    </ThemedView>
+    <SafeAreaView style={styles.root}>
+      <View style={styles.card}>
+        <Text style={styles.title}>About Civora</Text>
+        <Text style={styles.body}>
+          This is a modal screen. You can show settings, about text, or a quick action here.
+        </Text>
+
+        <Pressable onPress={() => router.back()} style={({ pressed }) => [styles.btn, pressed && {opacity: 0.9}]}>
+          <Text style={styles.btnText}>Close</Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-  },
-  link: {
-    marginTop: 15,
-    paddingVertical: 15,
-  },
+  root: { flex: 1, backgroundColor: "#0b1220", alignItems: "center", justifyContent: "center" },
+  card: { width: "88%", backgroundColor: "#111827", borderColor: "#1f2937", borderWidth: 1, borderRadius: 16, padding: 20, gap: 12 },
+  title: { color: "white", fontSize: 20, fontWeight: "700" },
+  body: { color: "#e5e7eb" },
+  btn: { backgroundColor: "#2563eb", paddingVertical: 10, borderRadius: 12, alignItems: "center", marginTop: 8 },
+  btnText: { color: "white", fontWeight: "700" },
 });
