@@ -7,7 +7,6 @@ import { BriefsResponse } from "./types";
 const fallback = Platform.select({
   // iOS simulator can reach mac host at 127.0.0.1
   ios: "http://127.0.0.1:8000",
-  // Android emulator requires special host mapping
   android: "http://10.0.2.2:8000",
   default: "http://127.0.0.1:8000",
 });
@@ -16,7 +15,8 @@ const fallback = Platform.select({
 export const API_BASE = process.env.EXPO_PUBLIC_API_BASE || fallback!;
 
 export async function fetchBriefs(): Promise<BriefsResponse> {
-  const res = await fetch(`${API_BASE}/briefs`);
+  // Backend route is /api/briefs
+  const res = await fetch(`${API_BASE}/api/briefs`);
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(`HTTP ${res.status} ${text}`);
