@@ -13,18 +13,18 @@ import {
 } from "react-native";
 import { API_BASE, fetchBriefs } from "../../lib/api";
 import { useAppStore } from "../../lib/store";
-import type { Brief } from "../../lib/types";
+import type { BriefItem } from "../../lib/types";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 export default function FeedScreen() {
-  const [briefs, setBriefs] = useState<Brief[]>([]);
+  const [briefs, setBriefs] = useState<BriefItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const router = useRouter();
-  const { setSelectedBrief } = useAppStore();
+  const { setSelectedBrief, setSelectedBriefView } = useAppStore();
   const scrollY = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef<FlatList>(null);
 
@@ -34,9 +34,7 @@ export default function FeedScreen() {
       setError(null);
       setLoading(true);
       const data = await fetchBriefs();
-      // fetchBriefs returns an array; keep support if a response object is ever returned
-      // @ts-ignore tolerate either shape at runtime
-      setBriefs(Array.isArray(data) ? data : (data?.briefs || []));
+      setBriefs(data.briefs || []);
     } catch (err: any) {
       setError(err.message || "Failed to load briefs");
     } finally {
@@ -58,7 +56,7 @@ export default function FeedScreen() {
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
 
   /** 📰 Each brief card */
-  const renderBrief = ({ item, index }: { item: Brief; index: number }) => {
+  const renderBrief = ({ item, index }: { item: BriefItem; index: number }) => {
     const inputRange = [
       (index - 1) * screenHeight,
       index * screenHeight,
@@ -77,14 +75,16 @@ export default function FeedScreen() {
       extrapolate: "clamp",
     });
 
+    // Safely handle missing brief_text
+    const fullText = (item as any).brief_text ?? (item as any).core_facts_brief ?? "";
     const MAX_LENGTH = 300; // Character limit for truncated text
-    const truncatedText = item.brief_text.length > MAX_LENGTH 
-      ? item.brief_text.substring(0, MAX_LENGTH) + "..."
-      : item.brief_text;
-    const shouldShowButton = item.brief_text.length > MAX_LENGTH;
+    const truncatedText = fullText.length > MAX_LENGTH 
+      ? fullText.substring(0, MAX_LENGTH) + "..."
+      : fullText;
 
     const openBrief = () => {
       setSelectedBrief(item);
+      setSelectedBriefView('core');
       router.push(`/article/${item.topic_id}` as any);
     };
 
@@ -102,35 +102,27 @@ export default function FeedScreen() {
 
         {/* Top Menu */}
         <View style={styles.topMenu}>
-          <Text style={styles.leftLabel}>L</Text>
+          <Pressable onPress={() => { setSelectedBrief(item as any); setSelectedBriefView('both'); router.push(`/article/${item.topic_id}` as any); }}>
+            <Text style={styles.leftLabel}>L</Text>
+          </Pressable>
           <Text style={styles.centerLabel}>What Happened</Text>
-          <Text style={styles.rightLabel}>R</Text>
+          <Pressable onPress={() => { setSelectedBrief(item as any); setSelectedBriefView('both'); router.push(`/article/${item.topic_id}` as any); }}>
+            <Text style={styles.rightLabel}>R</Text>
+          </Pressable>
         </View>
 
         {/* Brief Content */}
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text style={styles.source}>{`Topic #${item.topic_id}`}</Text>
             <Text style={styles.timeAgo}>Live</Text>
           </View>
 
-          <Text style={styles.title}>{truncatedText}</Text>
-
-          {shouldShowButton && (
-            <Pressable
-              style={styles.readMoreButton}
-              onPress={openBrief}
-            >
-              <Text style={styles.readMoreButtonText}>Read more</Text>
-            </Pressable>
-          )}
+          <Text style={styles.title}>{truncatedText || ""}</Text>
 
           <View style={styles.actions}>
             <Pressable
               style={styles.readButton}
-              onPress={() => {
-                console.log("Open Topic:", item.topic_id);
-              }}
+              onPress={openBrief}
             >
               <LinearGradient
                 colors={["#c084fc", "#a855f7", "#8b5cf6"]}

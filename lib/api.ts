@@ -1,7 +1,8 @@
 // lib/api.ts
 import { Platform } from "react-native";
 import { API_URL } from "../constants/api";
-
+import { getBaseUrl } from "../constants/env";
+import type { BriefsResponse } from "./types";
 
 const fallback = Platform.select({
   // iOS simulator can reach mac host at 127.0.0.1
@@ -10,45 +11,32 @@ const fallback = Platform.select({
   default: "http://127.0.0.1:8000",
 });
 
-// Respect EXPO_PUBLIC_API_BASE if provided, otherwise use platform fallback
-export const API_BASE = process.env.EXPO_PUBLIC_API_BASE || fallback!;
+// Respect EXPO_PUBLIC_API_BASE if provided; otherwise use env helper which is LAN-aware
+export const API_BASE = process.env.EXPO_PUBLIC_API_BASE || getBaseUrl() || fallback!;
 
-export type Brief = {
-  topic_id: number;
-  core_facts_brief?: string | null;
-  left_claims_brief?: string | null;
-  right_claims_brief?: string | null;
-  urls: string[];
-  titles: string[];
-  authors: (string | null)[];
-  published_dates: (string | null)[];
-};
-
-export type BriefsResponse = {
-  briefs: Brief[];
-  count: number;
-};
-
-export async function fetchBriefs(): Promise<Brief[]> {
-  const candidates = [`${API_BASE}/api/briefs`, `${API_BASE}/briefs`];
-  let lastError: string | null = null;
-  for (const url of candidates) {
-    try {
-      const res = await fetch(url);
-      if (!res.ok) {
-        lastError = `HTTP ${res.status}`;
-        continue;
-      }
-      const json = await res.json();
-      // Support both { briefs, count } and plain array responses
-      if (Array.isArray(json)) return json as Brief[];
-      const data = json as BriefsResponse;
-      return data.briefs ?? [];
-    } catch (e: any) {
-      lastError = e?.message || String(e);
-    }
+export async function fetchBriefs(): Promise<BriefsResponse> {
+  const url = `${API_BASE}/api/briefs`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`HTTP ${res.status} ${text} @ ${url}`);
   }
-  throw new Error(lastError || "Failed to load briefs");
+  const data = (await res.json()) as BriefsResponse;
+  // normalize numeric strings -> numbers where possible
+  const normalize = (arr?: (number | string)[]) =>
+    (arr ?? []).map((v) =>
+      typeof v === "string" && v.trim() !== "" && !isNaN(Number(v))
+        ? Number(v)
+        : v
+    );
+  data.briefs?.forEach((b: any) => {
+    b.fcs = normalize(b.fcs);
+    b.ocs = normalize(b.ocs);
+    b.sds = normalize(b.sds);
+    b.lis = normalize(b.lis);
+    b.article_biases = normalize(b.article_biases);
+  });
+  return data;
 }
 
 export async function apiGet<T>(path: string): Promise<T> {
