@@ -1,7 +1,6 @@
 // lib/api.ts
 import { Platform } from "react-native";
 import { API_URL } from "../constants/api";
-import { BriefsResponse } from "./types";
 
 
 const fallback = Platform.select({
@@ -14,14 +13,42 @@ const fallback = Platform.select({
 // Respect EXPO_PUBLIC_API_BASE if provided, otherwise use platform fallback
 export const API_BASE = process.env.EXPO_PUBLIC_API_BASE || fallback!;
 
-export async function fetchBriefs(): Promise<BriefsResponse> {
-  // Backend route is /api/briefs
-  const res = await fetch(`${API_BASE}/api/briefs`);
-  if (!res.ok) {
-    const text = await res.text().catch(() => "");
-    throw new Error(`HTTP ${res.status} ${text}`);
+export type Brief = {
+  topic_id: number;
+  core_facts_brief?: string | null;
+  left_claims_brief?: string | null;
+  right_claims_brief?: string | null;
+  urls: string[];
+  titles: string[];
+  authors: (string | null)[];
+  published_dates: (string | null)[];
+};
+
+export type BriefsResponse = {
+  briefs: Brief[];
+  count: number;
+};
+
+export async function fetchBriefs(): Promise<Brief[]> {
+  const candidates = [`${API_BASE}/api/briefs`, `${API_BASE}/briefs`];
+  let lastError: string | null = null;
+  for (const url of candidates) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) {
+        lastError = `HTTP ${res.status}`;
+        continue;
+      }
+      const json = await res.json();
+      // Support both { briefs, count } and plain array responses
+      if (Array.isArray(json)) return json as Brief[];
+      const data = json as BriefsResponse;
+      return data.briefs ?? [];
+    } catch (e: any) {
+      lastError = e?.message || String(e);
+    }
   }
-  return res.json();
+  throw new Error(lastError || "Failed to load briefs");
 }
 
 export async function apiGet<T>(path: string): Promise<T> {
