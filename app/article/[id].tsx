@@ -16,7 +16,7 @@ export default function ArticleDetailScreen() {
 
   if (!isArticle && !isBrief) {
     return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-bg">
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#000000" }}>
         <Card className="w-11/12">
           <Text className="text-white text-lg font-[Inter_700Bold]">Content not loaded</Text>
           <Text className="text-sub mt-2">Go back and try again.</Text>
@@ -28,8 +28,8 @@ export default function ArticleDetailScreen() {
   // Handle brief display
   if (isBrief) {
     return (
-      <SafeAreaView className="flex-1 bg-black">
-        <ScrollView className="flex-1" contentContainerStyle={{ padding: 24 }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#000000" }}>
+        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 24, backgroundColor: "#000000" }}>
           {/* Back button */}
           <Pressable
             onPress={() => router.back()}
@@ -59,6 +59,49 @@ export default function ArticleDetailScreen() {
           <Text style={{ color: "#ffffff", fontSize: 16, lineHeight: 26, marginTop: 8 }}>
             {brief.brief_text}
           </Text>
+
+          {/* Citations */}
+          <View style={{ marginTop: 28 }}>
+            <Text style={{ color: "#c084fc", fontSize: 18, fontWeight: "700", marginBottom: 12 }}>
+              Citations
+            </Text>
+            {(() => {
+              const urls = brief.urls || [];
+              const titles = brief.titles || [];
+              const authors = brief.authors || [];
+              const dates = brief.published_dates || [];
+              const itemCount = Math.min(urls.length, titles.length, authors.length, dates.length);
+              if (itemCount === 0) {
+                return (
+                  <Text style={{ color: "#aaa" }}>No citations available.</Text>
+                );
+              }
+              return urls.slice(0, itemCount).map((url, i) => {
+                const title = titles[i] || url;
+                const author = (authors[i] ?? undefined) || undefined;
+                const date = dates[i] || undefined;
+                return (
+                  <Pressable
+                    key={`${url}-${i}`}
+                    onPress={() => Linking.openURL(url)}
+                    style={{
+                      paddingVertical: 12,
+                      borderTopWidth: i === 0 ? 1 : 0,
+                      borderBottomWidth: 1,
+                      borderColor: "rgba(192, 132, 252, 0.25)",
+                    }}
+                  >
+                    <Text style={{ color: "#ffffff", fontSize: 15, fontWeight: "600" }}>{title}</Text>
+                    <Text style={{ color: "#a3a3a3", fontSize: 13, marginTop: 4 }}>
+                      {new URL(url).hostname}
+                      {author ? ` • ${author}` : ""}
+                      {date ? ` • ${new Date(date).toLocaleDateString()}` : ""}
+                    </Text>
+                  </Pressable>
+                );
+              });
+            })()}
+          </View>
         </ScrollView>
       </SafeAreaView>
     );
@@ -66,8 +109,8 @@ export default function ArticleDetailScreen() {
 
   // Handle article display
   return (
-    <SafeAreaView className="flex-1 bg-bg">
-      <View className="p-4 gap-3">
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#000000" }}>
+      <View style={{ padding: 16 }}>
         <Badge tone="brand">Article</Badge>
         <Card>
           <Text className="text-white text-xl font-[Inter_700Bold]">{article!.title}</Text>
