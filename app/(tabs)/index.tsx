@@ -34,7 +34,9 @@ export default function FeedScreen() {
       setError(null);
       setLoading(true);
       const data = await fetchBriefs();
-      setBriefs(data.briefs || []);
+      // fetchBriefs returns an array; keep support if a response object is ever returned
+      // @ts-ignore tolerate either shape at runtime
+      setBriefs(Array.isArray(data) ? data : (data?.briefs || []));
     } catch (err: any) {
       setError(err.message || "Failed to load briefs");
     } finally {
@@ -100,15 +102,9 @@ export default function FeedScreen() {
 
         {/* Top Menu */}
         <View style={styles.topMenu}>
-          <Pressable style={styles.menuItem}>
-            <Text style={styles.menuText}>facts</Text>
-          </Pressable>
-          <Pressable style={styles.menuItem}>
-            <Text style={styles.menuText}>right</Text>
-          </Pressable>
-          <Pressable style={styles.menuItem}>
-            <Text style={styles.menuText}>left</Text>
-          </Pressable>
+          <Text style={styles.leftLabel}>L</Text>
+          <Text style={styles.centerLabel}>What Happened</Text>
+          <Text style={styles.rightLabel}>R</Text>
         </View>
 
         {/* Brief Content */}
@@ -146,11 +142,14 @@ export default function FeedScreen() {
           </View>
         </View>
 
-        {/* Side Indicators */}
-        <View style={styles.sideIndicators}>
-          <View style={styles.indicator}><Text style={styles.indicatorText}>📖</Text></View>
-          <View style={styles.indicator}><Text style={styles.indicatorText}>💜</Text></View>
-          <View style={styles.indicator}><Text style={styles.indicatorText}>📤</Text></View>
+        {/* Save Button */}
+        <View style={styles.saveButtonContainer}>
+          <Pressable style={styles.saveButton}>
+            <View style={styles.saveIcon}>
+              <View style={styles.bookmarkBody} />
+              <View style={styles.bookmarkTail} />
+            </View>
+          </Pressable>
         </View>
       </Animated.View>
     );
@@ -232,8 +231,10 @@ const styles = StyleSheet.create({
   gradient: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
   headerContainer: {
     position: "absolute",
-    top: 40,
-    left: 24,
+    top: 20,
+    left: 0,
+    right: 0,
+    alignItems: "center",
     zIndex: 5,
   },
   headerText: {
@@ -252,30 +253,33 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 24,
     zIndex: 3,
   },
-  menuItem: {
-    backgroundColor: "rgba(192, 132, 252, 0.15)",
-    borderWidth: 1,
-    borderColor: "rgba(192, 132, 252, 0.3)",
-    borderRadius: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    shadowColor: "#c084fc",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+  leftLabel: {
+    color: "#3b82f6",
+    fontSize: 24,
+    fontWeight: "700",
+    textShadowColor: "rgba(59, 130, 246, 0.4)",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 6,
   },
-  menuText: {
+  centerLabel: {
     color: "#c084fc",
-    fontSize: 16,
-    fontWeight: "600",
-    letterSpacing: 1,
+    fontSize: 20,
+    fontWeight: "700",
+    letterSpacing: 0.5,
     textShadowColor: "rgba(192, 132, 252, 0.4)",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 8,
+  },
+  rightLabel: {
+    color: "#ef4444",
+    fontSize: 24,
+    fontWeight: "700",
+    textShadowColor: "rgba(239, 68, 68, 0.4)",
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 6,
   },
@@ -321,17 +325,16 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     letterSpacing: 0.5,
   },
-  sideIndicators: {
+  saveButtonContainer: {
     position: "absolute",
     right: 16,
     bottom: 160,
     zIndex: 3,
-    gap: 20,
   },
-  indicator: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  saveButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: "rgba(192, 132, 252, 0.2)",
     borderWidth: 1,
     borderColor: "rgba(192, 132, 252, 0.4)",
@@ -343,7 +346,33 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
   },
-  indicatorText: { fontSize: 20 },
+  saveIcon: {
+    width: 24,
+    height: 28,
+    position: "relative",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  bookmarkBody: {
+    width: 16,
+    height: 20,
+    backgroundColor: "#c084fc",
+    borderRadius: 2,
+    position: "absolute",
+    top: 0,
+  },
+  bookmarkTail: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderTopWidth: 8,
+    borderLeftColor: "transparent",
+    borderRightColor: "transparent",
+    borderTopColor: "#a855f7",
+    position: "absolute",
+    bottom: -2,
+  },
   pageIndicator: {
     position: "absolute",
     right: 8,
